@@ -85,6 +85,8 @@ manufacturing-analytics-platform/
 
 ### Data Ingestion
 
+The dataset is downloaded from UCI Machine Learning Repository using the provided scripts:
+
 1. Download and inspect the dataset:
    ```bash
    python ingestion/inspect_dataset.py
