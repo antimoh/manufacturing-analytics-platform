@@ -1,0 +1,14 @@
+# Data processing
+pandas>=2.0.0
+
+# Dataset download
+ucimlrepo>=0.0.3
+
+# Testing
+pytest>=7.0.0
+
+# Snowflake connector (for later phases)
+# snowflake-connector-python>=3.0.0
+
+# dbt with Snowflake adapter (for later phases)
+# dbt-snowflake>=1.7.0

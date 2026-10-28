@@ -1,0 +1,28 @@
+{
+  "file_name": "ai4i2020.csv",
+  "sha256_checksum": "9b01f38d2d2b860f0ad699bac001875eafbfb6b7159ccd2d746808c73c43e77d",
+  "row_count": 10000,
+  "column_count": 12,
+  "columns": [
+    "Type",
+    "Air temperature",
+    "Process temperature",
+    "Rotational speed",
+    "Torque",
+    "Tool wear",
+    "Machine failure",
+    "TWF",
+    "HDF",
+    "PWF",
+    "OSF",
+    "RNF"
+  ],
+  "missing_value_count": 0,
+  "source": {
+    "name": "UCI AI4I 2020 Predictive Maintenance Dataset",
+    "url": "https://archive.ics.uci.edu/dataset/601/ai4i+2020+predictive+maintenance+dataset",
+    "doi": "https://doi.org/10.24432/C5HS5C",
+    "license": "CC BY 4.0"
+  },
+  "ingestion_timestamp": "2026-10-28T16:04:05.706661+00:00"
+}
