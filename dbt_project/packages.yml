@@ -1,0 +1,8 @@
+# dbt Packages
+# ============
+# External packages used in this project
+
+packages:
+  # dbt-utils: Common macros for testing, SQL generation, and more
+  - package: dbt-labs/dbt_utils
+    version: [">=1.0.0", "<2.0.0"]

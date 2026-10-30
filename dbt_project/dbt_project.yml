@@ -1,0 +1,59 @@
+# Manufacturing Analytics Platform - dbt Project Configuration
+# ============================================================
+# This project transforms raw machine sensor data into analytics-ready models
+# for predictive maintenance insights.
+
+name: 'manufacturing_analytics'
+version: '1.0.0'
+config-version: 2
+
+# This setting configures which "profile" dbt uses for this project.
+profile: 'manufacturing_analytics'
+
+# These configurations specify where dbt should look for different types of files.
+model-paths: ["models"]
+analysis-paths: ["analyses"]
+test-paths: ["tests"]
+seed-paths: ["seeds"]
+macro-paths: ["macros"]
+snapshot-paths: ["snapshots"]
+
+clean-targets:
+  - "target"
+  - "dbt_packages"
+
+# Model configurations
+models:
+  manufacturing_analytics:
+    # Staging models - views for efficiency (source data cleaning)
+    staging:
+      +materialized: view
+      +schema: staging
+    
+    # Intermediate models - views for complex business logic
+    intermediate:
+      +materialized: view
+      +schema: staging
+    
+    # Marts models - tables for analytics consumption
+    marts:
+      +materialized: table
+      +schema: analytics
+
+# Variables for threshold configurations (used in predictive indicators)
+vars:
+  # Temperature thresholds (Kelvin)
+  high_temp_threshold: 310.0  # ~37°C - elevated operating temperature
+  critical_temp_threshold: 315.0  # ~42°C - critical temperature
+  
+  # Tool wear thresholds (minutes)
+  moderate_wear_threshold: 100
+  high_wear_threshold: 180
+  critical_wear_threshold: 220
+  
+  # Power thresholds (Watts)
+  high_power_threshold: 9000
+  
+  # Torque thresholds (Nm)
+  high_torque_threshold: 50
+  critical_torque_threshold: 65

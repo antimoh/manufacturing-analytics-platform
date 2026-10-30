@@ -70,3 +70,6 @@ dbt_project/.user.yml
 # Logs
 *.log
 logs/
+
+# dbt package lock
+dbt_project/package-lock.yml

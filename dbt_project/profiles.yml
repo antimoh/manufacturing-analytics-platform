@@ -1,0 +1,69 @@
+# dbt Profile Configuration for Manufacturing Analytics Platform
+# ===============================================================
+# 
+# This profile supports TWO authentication methods:
+# 1. Key-pair authentication (default, enterprise-grade)
+# 2. External browser/SSO authentication (for interactive use)
+#
+# ENVIRONMENT VARIABLES:
+#   Required:
+#   - SNOWFLAKE_ACCOUNT: Your Snowflake account identifier (e.g., FYIUUJV-XJ40878)
+#   - SNOWFLAKE_USER: Your Snowflake username (e.g., ANTIMOH@GMAIL.COM)
+#
+#   For key-pair auth:
+#   - SNOWFLAKE_PRIVATE_KEY_PATH: Path to your private key file
+#   - SNOWFLAKE_PRIVATE_KEY_PASSPHRASE: (Optional) If your key is encrypted
+#
+#   For SSO auth (interactive):
+#   - Use target 'dev_sso' or set SNOWFLAKE_AUTH=externalbrowser
+
+manufacturing_analytics:
+  target: dev
+  outputs:
+    # Key-pair authentication (non-interactive, CI/CD friendly)
+    dev:
+      type: snowflake
+      account: "{{ env_var('SNOWFLAKE_ACCOUNT', 'FYIUUJV-XJ40878') }}"
+      user: "{{ env_var('SNOWFLAKE_USER', 'ANTIMOH@GMAIL.COM') }}"
+      
+      # Key-pair authentication
+      private_key_path: "{{ env_var('SNOWFLAKE_PRIVATE_KEY_PATH', '~/.snowflake/rsa_key.p8') }}"
+      # Uncomment if your private key has a passphrase:
+      # private_key_passphrase: "{{ env_var('SNOWFLAKE_PRIVATE_KEY_PASSPHRASE') }}"
+      
+      role: ACCOUNTADMIN
+      warehouse: ANALYTICS_WH
+      database: MANUFACTURING_ANALYTICS
+      schema: RAW
+      threads: 4
+      client_session_keep_alive: False
+      query_tag: dbt_manufacturing_analytics
+    
+    # SSO/Browser authentication (interactive, opens browser)
+    dev_sso:
+      type: snowflake
+      account: "{{ env_var('SNOWFLAKE_ACCOUNT', 'FYIUUJV-XJ40878') }}"
+      user: "{{ env_var('SNOWFLAKE_USER', 'ANTIMOH@GMAIL.COM') }}"
+      authenticator: externalbrowser
+      
+      role: ACCOUNTADMIN
+      warehouse: ANALYTICS_WH
+      database: MANUFACTURING_ANALYTICS
+      schema: RAW
+      threads: 4
+      client_session_keep_alive: False
+      query_tag: dbt_manufacturing_analytics
+    
+    # Production target
+    prod:
+      type: snowflake
+      account: "{{ env_var('SNOWFLAKE_ACCOUNT', 'FYIUUJV-XJ40878') }}"
+      user: "{{ env_var('SNOWFLAKE_USER', 'ANTIMOH@GMAIL.COM') }}"
+      private_key_path: "{{ env_var('SNOWFLAKE_PRIVATE_KEY_PATH', '~/.snowflake/rsa_key.p8') }}"
+      role: ACCOUNTADMIN
+      warehouse: ANALYTICS_WH
+      database: MANUFACTURING_ANALYTICS
+      schema: RAW
+      threads: 4
+      client_session_keep_alive: False
+      query_tag: dbt_manufacturing_analytics_prod
