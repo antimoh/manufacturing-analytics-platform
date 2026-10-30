@@ -45,8 +45,15 @@ manufacturing-analytics-platform/
 │   └── raw/                    # Raw data files and manifest
 ├── ingestion/
 │   ├── inspect_dataset.py      # Dataset download and profiling
-│   └── create_manifest.py      # Manifest generation
-├── sql/                        # SQL transformations (coming soon)
+│   ├── create_manifest.py      # Manifest generation
+│   ├── snowflake_loader.py     # Programmatic Snowflake data loading
+│   └── generate_keys.py        # RSA key pair generation for auth
+├── sql/                        # Snowflake SQL scripts
+│   ├── 00_git_integration.sql  # Snowflake-GitHub integration setup
+│   ├── 01_setup_database.sql   # Database and schema creation
+│   ├── 02_create_raw_objects.sql
+│   ├── 03_load_raw_data.sql
+│   └── 04_validate_raw_data.sql
 ├── tests/
 │   └── test_raw_data.py        # Data quality tests
 ├── docs/
@@ -100,6 +107,26 @@ manufacturing-analytics-platform/
    pytest tests/test_raw_data.py -v
    ```
 
+### Snowflake Setup
+
+1. Generate RSA key pair for authentication:
+   ```bash
+   python ingestion/generate_keys.py
+   ```
+
+2. Register the public key in Snowflake (see output from step 1)
+
+3. Set environment variables:
+   ```powershell
+   $env:SNOWFLAKE_ACCOUNT = "ORGNAME-ACCOUNTNAME"
+   $env:SNOWFLAKE_USER = "your_login_name@email.com"
+   ```
+
+4. Load data to Snowflake:
+   ```bash
+   python ingestion/snowflake_loader.py
+   ```
+
 ## Business Questions
 
 This project explores:
@@ -115,7 +142,8 @@ This project explores:
 - [x] Phase 2: Snowflake setup and data loading
   - [x] Database, schemas, warehouse created
   - [x] Snowflake Git Integration configured
-  - [ ] Raw data loaded and validated
+  - [x] Python data loader with key-pair authentication
+  - [x] Raw data loaded and validated (10,000 rows, 339 failures)
 - [ ] Phase 3: SQL modeling and analytics
 - [ ] Phase 4: dbt implementation
 - [ ] Phase 5: Portfolio quality and documentation
@@ -128,6 +156,7 @@ This project explores:
 - **Testing:** pytest, dbt tests
 - **Version Control:** Git
 - **Integration:** Snowflake Git Integration (execute SQL directly from GitHub)
+- **Authentication:** RSA key-pair authentication (enterprise-grade security)
 
 ## License
 
