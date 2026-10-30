@@ -1,0 +1,233 @@
+# Marts Models Documentation
+# ==========================
+# Analytics-ready models for business consumption
+
+version: 2
+
+models:
+  - name: dim_machine_types
+    description: >
+      Reference dimension for machine quality variants with aggregated performance statistics.
+      
+      **Grain:** One row per machine type (L, M, H)
+      
+      **Use Cases:**
+      - Dashboard filters by machine type
+      - Comparative analysis across quality variants
+      - Performance benchmarking
+    
+    columns:
+      - name: machine_type_key
+        description: Surrogate key for the machine type dimension
+        tests:
+          - unique
+          - not_null
+      
+      - name: machine_type
+        description: "Machine type code: L (Low), M (Medium), H (High)"
+        tests:
+          - unique
+          - not_null
+      
+      - name: total_readings
+        description: Total number of sensor readings for this machine type
+        tests:
+          - not_null
+      
+      - name: total_failures
+        description: Total number of failures for this machine type
+        tests:
+          - not_null
+      
+      - name: failure_rate_pct
+        description: Percentage of readings that resulted in failure
+        tests:
+          - not_null
+
+  - name: fct_failure_events
+    description: >
+      Core fact table containing all machine sensor readings with complete failure analysis.
+      
+      **Grain:** One row per sensor reading
+      
+      **Use Cases:**
+      - Detailed failure investigation
+      - Root cause analysis
+      - Drill-through from summary reports
+      - Predictive model training data
+    
+    columns:
+      - name: sensor_reading_id
+        description: Unique identifier for each sensor reading
+        tests:
+          - unique
+          - not_null
+      
+      - name: machine_type_key
+        description: Foreign key to dim_machine_types
+        tests:
+          - not_null
+          - relationships:
+              to: ref('dim_machine_types')
+              field: machine_type_key
+      
+      - name: is_machine_failure
+        description: Binary indicator for any machine failure
+        tests:
+          - not_null
+          - accepted_values:
+              values: [0, 1]
+      
+      - name: primary_failure_type
+        description: The primary identified failure type
+        tests:
+          - not_null
+      
+      - name: risk_level
+        description: "Risk classification: Minimal, Low, Medium, High"
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['Minimal', 'Low', 'Medium', 'High']
+
+  - name: fct_failure_summary
+    description: >
+      Aggregated failure statistics by machine type and failure type.
+      
+      **Grain:** One row per machine type × failure type combination
+      
+      **Use Cases:**
+      - Executive dashboards
+      - Failure type distribution analysis
+      - Operating condition correlation studies
+    
+    columns:
+      - name: summary_key
+        description: Surrogate key for this summary row
+        tests:
+          - unique
+          - not_null
+      
+      - name: machine_type
+        description: Machine type code
+        tests:
+          - not_null
+      
+      - name: primary_failure_type
+        description: Failure type being summarized
+        tests:
+          - not_null
+      
+      - name: event_count
+        description: Number of failure events of this type
+        tests:
+          - not_null
+
+  - name: fct_machine_performance
+    description: >
+      Aggregated machine performance metrics by machine type and risk level.
+      
+      **Grain:** One row per machine type × risk level combination
+      
+      **Use Cases:**
+      - Operational monitoring dashboards
+      - Performance benchmarking
+      - Risk-based maintenance planning
+    
+    columns:
+      - name: performance_key
+        description: Surrogate key for this performance summary row
+        tests:
+          - unique
+          - not_null
+      
+      - name: machine_type
+        description: Machine type code
+        tests:
+          - not_null
+      
+      - name: risk_level
+        description: Risk level category
+        tests:
+          - not_null
+      
+      - name: failure_rate_pct
+        description: Percentage of readings that resulted in failure
+        tests:
+          - not_null
+
+  - name: fct_predictive_indicators
+    description: >
+      Predictive maintenance indicators with threshold-based risk flags.
+      
+      **Grain:** One row per sensor reading
+      
+      **Use Cases:**
+      - Predictive maintenance alerts
+      - Maintenance scheduling optimization  
+      - Model validation (includes actual vs predicted)
+      - High-risk machine identification
+    
+    columns:
+      - name: sensor_reading_id
+        description: Unique identifier for each sensor reading
+        tests:
+          - unique
+          - not_null
+      
+      - name: maintenance_priority
+        description: "Recommended maintenance priority: IMMEDIATE, URGENT, SCHEDULED, MONITOR, NORMAL"
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['IMMEDIATE', 'URGENT', 'SCHEDULED', 'MONITOR', 'NORMAL']
+      
+      - name: hdf_risk_indicator
+        description: "Heat Dissipation Failure risk level: HIGH, MEDIUM, LOW"
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['HIGH', 'MEDIUM', 'LOW']
+      
+      - name: pwf_risk_indicator
+        description: "Power Failure risk level: HIGH, MEDIUM, LOW"
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['HIGH', 'MEDIUM', 'LOW']
+      
+      - name: twf_risk_indicator
+        description: "Tool Wear Failure risk level: CRITICAL, HIGH, MEDIUM, LOW"
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['CRITICAL', 'HIGH', 'MEDIUM', 'LOW']
+      
+      - name: osf_risk_indicator
+        description: "Overstrain Failure risk level: CRITICAL, HIGH, MEDIUM, LOW"
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['CRITICAL', 'HIGH', 'MEDIUM', 'LOW']
+      
+      - name: predicted_failure
+        description: Binary indicator if model predicts failure
+        tests:
+          - not_null
+          - accepted_values:
+              values: [0, 1]
+      
+      - name: true_positive
+        description: Correctly predicted failures
+        tests:
+          - not_null
+      
+      - name: false_positive
+        description: Incorrectly predicted failures (predicted but didn't fail)
+        tests:
+          - not_null
+      
+      - name: false_negative
+        description: Missed failures (failed but not predicted)
+        tests:
+          - not_null
