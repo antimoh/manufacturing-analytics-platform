@@ -1,0 +1,4 @@
+machine_type_code,machine_type_name,quality_distribution_pct,overstrain_threshold,additional_tool_wear_min
+L,Low Quality,50,11000,2
+M,Medium Quality,30,12000,3
+H,High Quality,20,13000,5

@@ -1,0 +1,6 @@
+failure_type_code,failure_type_name,failure_type_description,prevention_strategy
+TWF,Tool Wear Failure,"Tool is replaced or fails at a randomly selected tool wear time between 200-240 minutes",Schedule tool replacement before 200 minutes of wear
+HDF,Heat Dissipation Failure,"Occurs when temperature differential < 8.6K AND rotational speed < 1380 rpm",Monitor temperature differential and maintain minimum speed
+PWF,Power Failure,"Occurs when power (torque × angular velocity) is outside 3500W-9000W range",Keep power output within operational bounds
+OSF,Overstrain Failure,"Occurs when tool_wear × torque exceeds threshold (L:11000, M:12000, H:13000)",Balance tool wear state with torque demands
+RNF,Random Failure,"0.1% probability regardless of process parameters",Implement general maintenance best practices

@@ -1,0 +1,53 @@
+# Seeds Documentation
+# ===================
+
+version: 2
+
+seeds:
+  - name: failure_type_reference
+    description: >
+      Reference data for failure types in the predictive maintenance dataset.
+      Contains failure codes, descriptions, and prevention strategies.
+    columns:
+      - name: failure_type_code
+        description: Three-letter code for the failure type (TWF, HDF, PWF, OSF, RNF)
+        tests:
+          - unique
+          - not_null
+      - name: failure_type_name
+        description: Human-readable name for the failure type
+        tests:
+          - not_null
+      - name: failure_type_description
+        description: Detailed description of failure conditions
+        tests:
+          - not_null
+      - name: prevention_strategy
+        description: Recommended approach to prevent this failure type
+
+  - name: machine_type_reference
+    description: >
+      Reference data for machine quality variants.
+      Contains type codes, distribution percentages, and operational thresholds.
+    columns:
+      - name: machine_type_code
+        description: Single-letter code for machine type (L, M, H)
+        tests:
+          - unique
+          - not_null
+      - name: machine_type_name
+        description: Human-readable name for machine quality level
+        tests:
+          - not_null
+      - name: quality_distribution_pct
+        description: Percentage of products from this machine type
+        tests:
+          - not_null
+      - name: overstrain_threshold
+        description: Overstrain factor threshold for this machine type
+        tests:
+          - not_null
+      - name: additional_tool_wear_min
+        description: Additional tool wear minutes per product for this type
+        tests:
+          - not_null
