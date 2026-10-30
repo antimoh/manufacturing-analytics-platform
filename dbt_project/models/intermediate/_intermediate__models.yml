@@ -1,0 +1,135 @@
+# Intermediate Models Documentation
+# ==================================
+
+version: 2
+
+models:
+  - name: int_machine_operating_conditions
+    description: >
+      Enriches staged sensor data with categorized operating conditions and risk indicators.
+      
+      **Purpose:** Apply business logic to classify machine operational states for downstream analytics.
+      
+      **Key Features:**
+      - Temperature, tool wear, power, torque, and speed condition categories
+      - Overstrain factor calculation
+      - Composite risk score (0-5)
+      - Risk level classification (Minimal/Low/Medium/High)
+    
+    columns:
+      - name: sensor_reading_id
+        description: Unique identifier for each sensor reading
+        tests:
+          - unique
+          - not_null
+      
+      - name: temperature_condition
+        description: "Categorized temperature state: Normal, Elevated, or Critical"
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['Normal', 'Elevated', 'Critical']
+      
+      - name: tool_wear_condition
+        description: "Categorized tool wear state: Low, Moderate, High, or Critical"
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['Low', 'Moderate', 'High', 'Critical']
+      
+      - name: power_condition
+        description: "Categorized power output: Low, Normal, or High"
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['Low', 'Normal', 'High']
+      
+      - name: torque_condition
+        description: "Categorized torque level: Normal, High, or Critical"
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['Normal', 'High', 'Critical']
+      
+      - name: speed_condition
+        description: "Categorized rotational speed: Low, Normal, or High"
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['Low', 'Normal', 'High']
+      
+      - name: overstrain_factor
+        description: Product of tool wear and torque (used in OSF detection)
+        tests:
+          - not_null
+      
+      - name: overstrain_threshold
+        description: Machine-type-specific overstrain limit
+        tests:
+          - not_null
+      
+      - name: risk_score
+        description: Composite risk score from 0 (minimal) to 5 (maximum)
+        tests:
+          - not_null
+      
+      - name: risk_level
+        description: "Categorized risk: Minimal, Low, Medium, or High"
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['Minimal', 'Low', 'Medium', 'High']
+
+  - name: int_failure_analysis
+    description: >
+      Detailed failure analysis with contributing factors identification.
+      
+      **Purpose:** Prepare failure data for root cause analysis and predictive insights.
+      
+      **Key Features:**
+      - Primary failure type identification
+      - Failure complexity classification (single vs multiple failures)
+      - Contributing conditions detection (HDF, PWF, TWF, OSF conditions)
+      - Complete operational context for failed readings
+    
+    columns:
+      - name: sensor_reading_id
+        description: Unique identifier for each sensor reading
+        tests:
+          - unique
+          - not_null
+      
+      - name: primary_failure_type
+        description: The main identified failure type for this reading
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['Tool Wear Failure', 'Heat Dissipation Failure', 'Power Failure', 
+                      'Overstrain Failure', 'Random Failure', 'Unknown Failure', 'No Failure']
+      
+      - name: failure_complexity
+        description: Whether the reading had no, single, or multiple failures
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['No Failure', 'Single Failure', 'Multiple Failures']
+      
+      - name: hdf_conditions_present
+        description: Boolean indicating if HDF-triggering conditions were met
+        tests:
+          - not_null
+      
+      - name: pwf_conditions_present
+        description: Boolean indicating if PWF-triggering conditions were met
+        tests:
+          - not_null
+      
+      - name: twf_conditions_present
+        description: Boolean indicating if TWF-triggering conditions were met
+        tests:
+          - not_null
+      
+      - name: osf_conditions_present
+        description: Boolean indicating if OSF-triggering conditions were met
+        tests:
+          - not_null

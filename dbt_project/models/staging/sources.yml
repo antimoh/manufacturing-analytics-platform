@@ -1,0 +1,126 @@
+# Source Definitions
+# ==================
+# Defines the raw data sources that dbt models will reference.
+
+version: 2
+
+sources:
+  - name: raw
+    description: >
+      Raw machine sensor data from the UCI AI4I 2020 Predictive Maintenance Dataset.
+      Contains 10,000 records of machine operations with sensor readings and failure indicators.
+    database: MANUFACTURING_ANALYTICS
+    schema: RAW
+    
+    # Source freshness checks
+    freshness:
+      warn_after: {count: 24, period: hour}
+      error_after: {count: 48, period: hour}
+    
+    tables:
+      - name: machine_sensor_data
+        description: >
+          Raw machine sensor readings including temperature, rotational speed, torque,
+          tool wear, and binary failure indicators. Each row represents one machine
+          operation record.
+        
+        # Freshness check column
+        loaded_at_field: _loaded_at
+        
+        columns:
+          - name: type
+            description: >
+              Machine quality variant code:
+              - L = Low quality (50% of products)
+              - M = Medium quality (30% of products)
+              - H = High quality (20% of products)
+            tests:
+              - not_null
+              - accepted_values:
+                  values: ['L', 'M', 'H']
+          
+          - name: air_temperature
+            description: Air temperature in Kelvin (generated around 300K with variance of 2K)
+            tests:
+              - not_null
+          
+          - name: process_temperature
+            description: Process temperature in Kelvin (air temp + 10K with variance of 1K)
+            tests:
+              - not_null
+          
+          - name: rotational_speed
+            description: Rotational speed in RPM (power-law distributed around 2860 rpm)
+            tests:
+              - not_null
+          
+          - name: torque
+            description: Torque in Newton-meters (normally distributed around 40 Nm)
+            tests:
+              - not_null
+          
+          - name: tool_wear
+            description: >
+              Tool wear time in minutes. Wear is added randomly between 0-6 minutes per product,
+              with H/M/L variants adding 5/3/2 minutes respectively.
+            tests:
+              - not_null
+          
+          - name: machine_failure
+            description: Binary indicator (0/1) for any machine failure occurrence
+            tests:
+              - not_null
+              - accepted_values:
+                  values: [0, 1]
+          
+          - name: twf
+            description: >
+              Tool Wear Failure (TWF) indicator. The tool is replaced or fails at a
+              randomly selected tool wear time between 200-240 minutes.
+            tests:
+              - not_null
+              - accepted_values:
+                  values: [0, 1]
+          
+          - name: hdf
+            description: >
+              Heat Dissipation Failure (HDF) indicator. Occurs when the difference
+              between air and process temperature is below 8.6K and rotational
+              speed is below 1380 rpm.
+            tests:
+              - not_null
+              - accepted_values:
+                  values: [0, 1]
+          
+          - name: pwf
+            description: >
+              Power Failure (PWF) indicator. Occurs when the product of torque
+              and rotational speed (in rad/s) is outside the range of 3500W-9000W.
+            tests:
+              - not_null
+              - accepted_values:
+                  values: [0, 1]
+          
+          - name: osf
+            description: >
+              Overstrain Failure (OSF) indicator. Occurs when the product of tool
+              wear and torque exceeds certain thresholds per variant:
+              L=11,000, M=12,000, H=13,000.
+            tests:
+              - not_null
+              - accepted_values:
+                  values: [0, 1]
+          
+          - name: rnf
+            description: >
+              Random Failure (RNF) indicator. 0.1% chance of failure regardless
+              of process parameters (simulates random equipment failures).
+            tests:
+              - not_null
+              - accepted_values:
+                  values: [0, 1]
+          
+          - name: _loaded_at
+            description: Timestamp when the record was loaded into Snowflake
+            tests:
+              - not_null

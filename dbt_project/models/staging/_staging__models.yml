@@ -1,0 +1,117 @@
+# Staging Models Documentation
+# ============================
+
+version: 2
+
+models:
+  - name: stg_machine_sensors
+    description: >
+      Cleaned and standardized machine sensor data from the raw source.
+      This model serves as the foundation for all downstream transformations.
+      
+      **Source:** UCI AI4I 2020 Predictive Maintenance Dataset
+      
+      **Grain:** One row per machine sensor reading
+      
+      **Key transformations:**
+      - Added surrogate key for unique identification
+      - Expanded machine type codes to descriptions
+      - Calculated temperature differential
+      - Calculated power output in Watts
+      - Counted failure types per reading
+    
+    columns:
+      - name: sensor_reading_id
+        description: Surrogate key uniquely identifying each sensor reading
+        tests:
+          - unique
+          - not_null
+      
+      - name: machine_type
+        description: "Machine quality variant: L (Low), M (Medium), H (High)"
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['L', 'M', 'H']
+      
+      - name: machine_type_description
+        description: Human-readable machine type description
+        tests:
+          - not_null
+      
+      - name: air_temperature_k
+        description: Ambient air temperature in Kelvin
+        tests:
+          - not_null
+      
+      - name: process_temperature_k
+        description: Machine process temperature in Kelvin
+        tests:
+          - not_null
+      
+      - name: temperature_differential_k
+        description: Difference between process and air temperature (K)
+        tests:
+          - not_null
+      
+      - name: rotational_speed_rpm
+        description: Machine rotational speed in revolutions per minute
+        tests:
+          - not_null
+      
+      - name: torque_nm
+        description: Torque applied in Newton-meters
+        tests:
+          - not_null
+      
+      - name: tool_wear_minutes
+        description: Accumulated tool wear time in minutes
+        tests:
+          - not_null
+      
+      - name: power_watts
+        description: Calculated power output (Torque × Angular Velocity)
+        tests:
+          - not_null
+      
+      - name: is_machine_failure
+        description: Binary indicator for any machine failure (1=failure, 0=no failure)
+        tests:
+          - not_null
+          - accepted_values:
+              values: [0, 1]
+      
+      - name: tool_wear_failure
+        description: Tool Wear Failure indicator (TWF)
+        tests:
+          - not_null
+      
+      - name: heat_dissipation_failure
+        description: Heat Dissipation Failure indicator (HDF)
+        tests:
+          - not_null
+      
+      - name: power_failure
+        description: Power Failure indicator (PWF)
+        tests:
+          - not_null
+      
+      - name: overstrain_failure
+        description: Overstrain Failure indicator (OSF)
+        tests:
+          - not_null
+      
+      - name: random_failure
+        description: Random Failure indicator (RNF)
+        tests:
+          - not_null
+      
+      - name: failure_type_count
+        description: Number of different failure types flagged for this reading
+        tests:
+          - not_null
+      
+      - name: loaded_at
+        description: Timestamp when record was loaded to Snowflake
+        tests:
+          - not_null
