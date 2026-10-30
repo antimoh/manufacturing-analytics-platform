@@ -1,3 +1,6 @@
+# Manufacturing Analytics Platform - Python Dependencies
+# =====================================================
+
 # Data processing
 pandas>=2.0.0
 
@@ -7,8 +10,11 @@ ucimlrepo>=0.0.3
 # Testing
 pytest>=7.0.0
 
-# Snowflake connector (for later phases)
-# snowflake-connector-python>=3.0.0
+# Snowflake connector with pandas support
+snowflake-connector-python[pandas]>=3.0.0
+
+# Environment variable management
+python-dotenv>=1.0.0
 
 # dbt with Snowflake adapter (for later phases)
 # dbt-snowflake>=1.7.0
