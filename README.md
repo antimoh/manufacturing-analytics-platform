@@ -85,8 +85,6 @@ manufacturing-analytics-platform/
 
 ### Data Ingestion
 
-The dataset is downloaded from UCI Machine Learning Repository using the provided scripts:
-
 1. Download and inspect the dataset:
    ```bash
    python ingestion/inspect_dataset.py
@@ -114,7 +112,10 @@ This project explores:
 ## Roadmap
 
 - [x] Phase 1: Local data engineering foundations
-- [ ] Phase 2: Snowflake setup and data loading
+- [x] Phase 2: Snowflake setup and data loading
+  - [x] Database, schemas, warehouse created
+  - [x] Snowflake Git Integration configured
+  - [ ] Raw data loaded and validated
 - [ ] Phase 3: SQL modeling and analytics
 - [ ] Phase 4: dbt implementation
 - [ ] Phase 5: Portfolio quality and documentation
@@ -126,6 +127,7 @@ This project explores:
 - **Transformation:** dbt
 - **Testing:** pytest, dbt tests
 - **Version Control:** Git
+- **Integration:** Snowflake Git Integration (execute SQL directly from GitHub)
 
 ## License
 
