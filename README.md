@@ -58,7 +58,14 @@ manufacturing-analytics-platform/
 │   └── test_raw_data.py        # Data quality tests
 ├── docs/
 │   └── DATASET.md              # Dataset documentation
-├── dbt_project/                # dbt models (coming soon)
+├── dbt_project/                # dbt transformation layer
+│   ├── models/
+│   │   ├── staging/            # Data cleaning & standardization
+│   │   ├── intermediate/       # Business logic transformations
+│   │   └── marts/              # Analytics-ready tables
+│   ├── macros/                 # Reusable SQL functions
+│   ├── tests/                  # Custom data tests
+│   └── seeds/                  # Reference data
 ├── requirements.txt            # Python dependencies
 └── README.md
 ```
@@ -127,6 +134,32 @@ manufacturing-analytics-platform/
    python ingestion/snowflake_loader.py
    ```
 
+### dbt Transformation Layer
+
+1. Install dbt-snowflake:
+   ```bash
+   pip install dbt-snowflake>=1.7.0
+   ```
+
+2. Install dbt packages:
+   ```bash
+   cd dbt_project
+   dbt deps
+   ```
+
+3. Run dbt models:
+   ```bash
+   dbt build  # Runs models and tests
+   ```
+
+4. Generate documentation:
+   ```bash
+   dbt docs generate
+   dbt docs serve
+   ```
+
+See [dbt_project/README.md](dbt_project/README.md) for detailed dbt documentation.
+
 ## Business Questions
 
 This project explores:
@@ -144,9 +177,14 @@ This project explores:
   - [x] Snowflake Git Integration configured
   - [x] Python data loader with key-pair authentication
   - [x] Raw data loaded and validated (10,000 rows, 339 failures)
-- [ ] Phase 3: SQL modeling and analytics
-- [ ] Phase 4: dbt implementation
-- [ ] Phase 5: Portfolio quality and documentation
+- [x] Phase 3: dbt implementation
+  - [x] Staging models with source definitions
+  - [x] Intermediate models with business logic
+  - [x] Marts models (fact & dimension tables)
+  - [x] Custom macros and tests
+  - [x] Documentation and freshness checks
+- [ ] Phase 4: Dashboard and visualization
+- [ ] Phase 5: Portfolio refinement
 
 ## Technologies
 
