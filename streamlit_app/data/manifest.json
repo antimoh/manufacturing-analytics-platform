@@ -1,0 +1,42 @@
+{
+  "exported_at": "2026-11-03T15:05:24.649376",
+  "source_database": "MANUFACTURING_ANALYTICS",
+  "source_schema": "RAW_ANALYTICS",
+  "tables": [
+    {
+      "table": "dim_machine_types",
+      "rows": 3,
+      "columns": 21,
+      "file": "dim_machine_types.csv",
+      "size_kb": 0.8
+    },
+    {
+      "table": "fct_failure_events",
+      "rows": 10000,
+      "columns": 35,
+      "file": "fct_failure_events.csv",
+      "size_kb": 3089.7
+    },
+    {
+      "table": "fct_failure_summary",
+      "rows": 15,
+      "columns": 22,
+      "file": "fct_failure_summary.csv",
+      "size_kb": 2.6
+    },
+    {
+      "table": "fct_machine_performance",
+      "rows": 12,
+      "columns": 30,
+      "file": "fct_machine_performance.csv",
+      "size_kb": 3.1
+    },
+    {
+      "table": "fct_predictive_indicators",
+      "rows": 10000,
+      "columns": 31,
+      "file": "fct_predictive_indicators.csv",
+      "size_kb": 2510.3
+    }
+  ]
+}
