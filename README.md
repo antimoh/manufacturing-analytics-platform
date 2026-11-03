@@ -4,7 +4,7 @@ A portfolio project demonstrating end-to-end data engineering capabilities for m
 
 ## 🚀 Live Demo
 
-**[View Interactive Dashboard](https://manufacturing-analytics.streamlit.app)** *(Streamlit Community Cloud)*
+**[View Interactive Dashboard](https://mfg-analytics-platform.streamlit.app)** *(Streamlit Community Cloud)*
 
 ## Project Overview
 
