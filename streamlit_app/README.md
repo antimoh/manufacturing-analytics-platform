@@ -4,7 +4,7 @@ Interactive Streamlit dashboard for predictive maintenance insights.
 
 ## 🚀 Live Demo
 
-**[View Live Dashboard](https://manufacturing-analytics.streamlit.app)** *(link active after deployment)*
+**[View Live Dashboard](https://mfg-analytics-platform.streamlit.app)**
 
 ## Features
 
