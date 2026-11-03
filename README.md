@@ -2,6 +2,10 @@
 
 A portfolio project demonstrating end-to-end data engineering capabilities for manufacturing analytics, built to strengthen candidacy for US-based Data Engineer and Analytics Engineer positions.
 
+## 🚀 Live Demo
+
+**[View Interactive Dashboard](https://manufacturing-analytics.streamlit.app)** *(Streamlit Community Cloud)*
+
 ## Project Overview
 
 This project showcases:
@@ -10,6 +14,7 @@ This project showcases:
 - Cloud data warehousing with Snowflake
 - SQL transformations and analytical modeling
 - dbt models, tests, and documentation
+- Interactive Streamlit dashboard
 - Reproducible development workflows
 - Business-oriented manufacturing analytics
 
@@ -30,6 +35,7 @@ See [docs/DATASET.md](docs/DATASET.md) for detailed dataset documentation.
 ```
 UCI Dataset → Python Ingestion → Raw Data Storage → Snowflake Raw Tables
     → Staging Transformations → dbt Analytical Models → Business Analytics
+        → Streamlit Dashboard (CSV export for persistence)
 ```
 
 ### Snowflake Schemas
@@ -66,6 +72,12 @@ manufacturing-analytics-platform/
 │   ├── macros/                 # Reusable SQL functions
 │   ├── tests/                  # Custom data tests
 │   └── seeds/                  # Reference data
+├── streamlit_app/              # Interactive dashboard
+│   ├── app.py                  # Main Streamlit application
+│   ├── data/                   # Exported mart tables (CSV)
+│   └── requirements.txt        # Dashboard dependencies
+├── scripts/
+│   └── export_marts.py         # Export Snowflake tables to CSV
 ├── requirements.txt            # Python dependencies
 └── README.md
 ```
@@ -160,6 +172,17 @@ manufacturing-analytics-platform/
 
 See [dbt_project/README.md](dbt_project/README.md) for detailed dbt documentation.
 
+### Streamlit Dashboard
+
+Run the dashboard locally:
+```bash
+cd streamlit_app
+pip install -r requirements.txt
+streamlit run app.py
+```
+
+See [streamlit_app/README.md](streamlit_app/README.md) for dashboard documentation.
+
 ## Business Questions
 
 This project explores:
@@ -183,7 +206,11 @@ This project explores:
   - [x] Marts models (fact & dimension tables)
   - [x] Custom macros and tests
   - [x] Documentation and freshness checks
-- [ ] Phase 4: Dashboard and visualization
+- [x] Phase 4: Dashboard and visualization
+  - [x] Streamlit dashboard with interactive filters
+  - [x] KPI metrics and failure analysis charts
+  - [x] Predictive maintenance indicators
+  - [x] Deployed to Streamlit Community Cloud
 - [ ] Phase 5: Portfolio refinement
 
 ## Technologies
@@ -191,6 +218,7 @@ This project explores:
 - **Languages:** Python, SQL
 - **Data Warehouse:** Snowflake
 - **Transformation:** dbt
+- **Visualization:** Streamlit, Plotly
 - **Testing:** pytest, dbt tests
 - **Version Control:** Git
 - **Integration:** Snowflake Git Integration (execute SQL directly from GitHub)
