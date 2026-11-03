@@ -1,1 +1,486 @@
-"""\nManufacturing Analytics Dashboard\n==================================\n\nInteractive dashboard for predictive maintenance insights.\nBuilt with Streamlit, designed for portfolio demonstration.\n\nAuthor: Anton Timokhin\nData Source: UCI AI4I 2020 Predictive Maintenance Dataset\n"""\n\nimport streamlit as st\nimport pandas as pd\nimport plotly.express as px\nimport plotly.graph_objects as go\nfrom pathlib import Path\n\n# =============================================================================\n# PAGE CONFIGURATION\n# =============================================================================\n\nst.set_page_config(\n    page_title="Manufacturing Analytics | Predictive Maintenance",\n    page_icon="🏭",\n    layout="wide",\n    initial_sidebar_state="expanded",\n)\n\n# =============================================================================\n# DATA LOADING\n# =============================================================================\n\n@st.cache_data\ndef load_data():\n    """Load all mart tables from CSV files."""\n    data_dir = Path(__file__).parent / "data"\n    \n    data = {\n        "dim_machine_types": pd.read_csv(data_dir / "dim_machine_types.csv"),\n        "fct_failure_events": pd.read_csv(data_dir / "fct_failure_events.csv"),\n        "fct_failure_summary": pd.read_csv(data_dir / "fct_failure_summary.csv"),\n        "fct_machine_performance": pd.read_csv(data_dir / "fct_machine_performance.csv"),\n        "fct_predictive_indicators": pd.read_csv(data_dir / "fct_predictive_indicators.csv"),\n    }\n    \n    return data\n\n\n# Load data\ndata = load_data()\ndim_machine = data["dim_machine_types"]\nfct_events = data["fct_failure_events"]\nfct_summary = data["fct_failure_summary"]\nfct_performance = data["fct_machine_performance"]\nfct_predictive = data["fct_predictive_indicators"]\n\n# =============================================================================\n# SIDEBAR\n# =============================================================================\n\nwith st.sidebar:\n    st.image("https://img.icons8.com/fluency/96/factory.png", width=80)\n    st.title("Manufacturing Analytics")\n    st.markdown("---")\n    \n    # Machine type filter\n    machine_types = ["All"] + list(dim_machine["machine_type"].unique())\n    selected_machine = st.selectbox(\n        "🔧 Filter by Machine Type",\n        machine_types,\n        help="L=Low Quality, M=Medium Quality, H=High Quality"\n    )\n    \n    # Risk level filter\n    risk_levels = ["All"] + ["High", "Medium", "Low", "Minimal"]\n    selected_risk = st.selectbox(\n        "⚠️ Filter by Risk Level",\n        risk_levels\n    )\n    \n    st.markdown("---")\n    st.markdown("### About This Dashboard")\n    st.markdown(\"\"\"\n    This dashboard analyzes machine sensor data \n    to predict maintenance needs and prevent failures.\n    \n    **Data:** 10,000 machine operation records  \n    **Source:** UCI ML Repository  \n    **Built with:** Python, dbt, Snowflake, Streamlit\n    \"\"\")\n    \n    st.markdown("---")\n    st.markdown("[![GitHub](https://img.shields.io/badge/GitHub-Repo-blue?logo=github)](https://github.com/antimoh/manufacturing-analytics-platform)")\n\n# =============================================================================\n# FILTER DATA\n# =============================================================================\n\n# Apply filters to main dataset\nfiltered_events = fct_events.copy()\nfiltered_predictive = fct_predictive.copy()\n\nif selected_machine != "All":\n    filtered_events = filtered_events[filtered_events["machine_type"] == selected_machine]\n    filtered_predictive = filtered_predictive[filtered_predictive["machine_type"] == selected_machine]\n\nif selected_risk != "All":\n    filtered_events = filtered_events[filtered_events["risk_level"] == selected_risk]\n    filtered_predictive = filtered_predictive[filtered_predictive["risk_level"] == selected_risk]\n\n# =============================================================================\n# HEADER\n# =============================================================================\n\nst.title("🏭 Predictive Maintenance Dashboard")\nst.markdown("Real-time insights for manufacturing equipment health and failure prevention")\n\n# =============================================================================\n# KPI METRICS\n# =============================================================================\n\nst.markdown("---")\n\ncol1, col2, col3, col4, col5 = st.columns(5)\n\ntotal_readings = len(filtered_events)\ntotal_failures = filtered_events["is_machine_failure"].sum()\nfailure_rate = (total_failures / total_readings * 100) if total_readings > 0 else 0\n\n# Predictive metrics\nimmediate_maintenance = len(filtered_predictive[filtered_predictive["maintenance_priority"] == "IMMEDIATE"])\nurgent_maintenance = len(filtered_predictive[filtered_predictive["maintenance_priority"] == "URGENT"])\n\nwith col1:\n    st.metric(\n        label="Total Readings",\n        value=f"{total_readings:,}",\n        help="Number of machine sensor readings"\n    )\n\nwith col2:\n    st.metric(\n        label="Total Failures",\n        value=f"{int(total_failures):,}",\n        delta=f"{failure_rate:.1f}% failure rate",\n        delta_color="inverse"\n    )\n\nwith col3:\n    st.metric(\n        label="🚨 Immediate Action",\n        value=f"{immediate_maintenance:,}",\n        help="Machines requiring immediate maintenance"\n    )\n\nwith col4:\n    st.metric(\n        label="⚡ Urgent Review",\n        value=f"{urgent_maintenance:,}",\n        help="Machines requiring urgent attention"\n    )\n\nwith col5:\n    high_risk = len(filtered_events[filtered_events["risk_level"] == "High"])\n    st.metric(\n        label="⚠️ High Risk",\n        value=f"{high_risk:,}",\n        help="Readings classified as high risk"\n    )\n\n# =============================================================================\n# ROW 1: FAILURE ANALYSIS\n# =============================================================================\n\nst.markdown("---")\nst.subheader("📊 Failure Analysis")\n\ncol1, col2 = st.columns(2)\n\nwith col1:\n    # Failure rate by machine type\n    fig_failure_rate = px.bar(\n        dim_machine,\n        x="machine_type_description",\n        y="failure_rate_pct",\n        color="machine_type",\n        title="Failure Rate by Machine Type",\n        labels={\n            "machine_type_description": "Machine Type",\n            "failure_rate_pct": "Failure Rate (%)",\n            "machine_type": "Type"\n        },\n        color_discrete_map={"L": "#EF553B", "M": "#FECB52", "H": "#00CC96"}\n    )\n    fig_failure_rate.update_layout(showlegend=False)\n    st.plotly_chart(fig_failure_rate, use_container_width=True)\n\nwith col2:\n    # Failure type distribution\n    failure_types = fct_summary.groupby("primary_failure_type")["event_count"].sum().reset_index()\n    failure_types = failure_types.sort_values("event_count", ascending=True)\n    \n    fig_failure_types = px.bar(\n        failure_types,\n        x="event_count",\n        y="primary_failure_type",\n        orientation="h",\n        title="Failure Type Distribution",\n        labels={\n            "event_count": "Number of Failures",\n            "primary_failure_type": "Failure Type"\n        },\n        color="event_count",\n        color_continuous_scale="Reds"\n    )\n    fig_failure_types.update_layout(showlegend=False, coloraxis_showscale=False)\n    st.plotly_chart(fig_failure_types, use_container_width=True)\n\n# =============================================================================\n# ROW 2: OPERATING CONDITIONS\n# =============================================================================\n\nst.markdown("---")\nst.subheader("🌡️ Operating Conditions Analysis")\n\ncol1, col2 = st.columns(2)\n\nwith col1:\n    # Temperature vs Power scatter\n    sample_data = filtered_events.sample(min(1000, len(filtered_events)), random_state=42)\n    \n    fig_scatter = px.scatter(\n        sample_data,\n        x="power_watts",\n        y="temperature_differential_k",\n        color="is_machine_failure",\n        title="Temperature Differential vs Power Output",\n        labels={\n            "power_watts": "Power (Watts)",\n            "temperature_differential_k": "Temp Differential (K)",\n            "is_machine_failure": "Failure"\n        },\n        color_discrete_map={0: "#636EFA", 1: "#EF553B"},\n        opacity=0.6\n    )\n    fig_scatter.update_layout(\n        legend_title_text="Machine Failure",\n        legend=dict(\n            itemsizing="constant",\n            title_font_size=12,\n        )\n    )\n    # Add reference lines for failure thresholds\n    fig_scatter.add_hline(y=8.6, line_dash="dash", line_color="red", \n                          annotation_text="HDF Threshold (8.6K)")\n    fig_scatter.add_vline(x=3500, line_dash="dash", line_color="orange",\n                          annotation_text="Min Power")\n    fig_scatter.add_vline(x=9000, line_dash="dash", line_color="orange",\n                          annotation_text="Max Power")\n    st.plotly_chart(fig_scatter, use_container_width=True)\n\nwith col2:\n    # Tool wear distribution by failure status\n    fig_wear = px.histogram(\n        filtered_events,\n        x="tool_wear_minutes",\n        color="is_machine_failure",\n        title="Tool Wear Distribution by Failure Status",\n        labels={\n            "tool_wear_minutes": "Tool Wear (minutes)",\n            "is_machine_failure": "Failure",\n            "count": "Count"\n        },\n        color_discrete_map={0: "#636EFA", 1: "#EF553B"},\n        barmode="overlay",\n        opacity=0.7\n    )\n    fig_wear.add_vline(x=200, line_dash="dash", line_color="red",\n                       annotation_text="TWF Zone Start")\n    fig_wear.update_layout(legend_title_text="Machine Failure")\n    st.plotly_chart(fig_wear, use_container_width=True)\n\n# =============================================================================\n# ROW 3: PREDICTIVE INDICATORS\n# =============================================================================\n\nst.markdown("---")\nst.subheader("🔮 Predictive Maintenance Indicators")\n\ncol1, col2, col3 = st.columns(3)\n\nwith col1:\n    # Maintenance priority distribution\n    priority_counts = filtered_predictive["maintenance_priority"].value_counts().reset_index()\n    priority_counts.columns = ["priority", "count"]\n    \n    # Define order\n    priority_order = ["IMMEDIATE", "URGENT", "SCHEDULED", "MONITOR", "NORMAL"]\n    priority_counts["priority"] = pd.Categorical(\n        priority_counts["priority"], \n        categories=priority_order, \n        ordered=True\n    )\n    priority_counts = priority_counts.sort_values("priority")\n    \n    fig_priority = px.pie(\n        priority_counts,\n        values="count",\n        names="priority",\n        title="Maintenance Priority Distribution",\n        color="priority",\n        color_discrete_map={\n            "IMMEDIATE": "#EF553B",\n            "URGENT": "#FFA15A",\n            "SCHEDULED": "#FECB52",\n            "MONITOR": "#00CC96",\n            "NORMAL": "#636EFA"\n        }\n    )\n    fig_priority.update_traces(textposition='inside', textinfo='percent+label')\n    st.plotly_chart(fig_priority, use_container_width=True)\n\nwith col2:\n    # Risk indicator heatmap\n    risk_data = pd.DataFrame({\n        "Indicator": ["HDF Risk", "PWF Risk", "TWF Risk", "OSF Risk"],\n        "HIGH": [\n            len(filtered_predictive[filtered_predictive["hdf_risk_indicator"] == "HIGH"]),\n            len(filtered_predictive[filtered_predictive["pwf_risk_indicator"] == "HIGH"]),\n            len(filtered_predictive[filtered_predictive["twf_risk_indicator"].isin(["HIGH", "CRITICAL"])]),\n            len(filtered_predictive[filtered_predictive["osf_risk_indicator"].isin(["HIGH", "CRITICAL"])]),\n        ],\n        "MEDIUM": [\n            len(filtered_predictive[filtered_predictive["hdf_risk_indicator"] == "MEDIUM"]),\n            len(filtered_predictive[filtered_predictive["pwf_risk_indicator"] == "MEDIUM"]),\n            len(filtered_predictive[filtered_predictive["twf_risk_indicator"] == "MEDIUM"]),\n            len(filtered_predictive[filtered_predictive["osf_risk_indicator"] == "MEDIUM"]),\n        ],\n    })\n    \n    fig_risk = px.bar(\n        risk_data,\n        x="Indicator",\n        y=["HIGH", "MEDIUM"],\n        title="Risk Indicators Summary",\n        barmode="group",\n        color_discrete_map={"HIGH": "#EF553B", "MEDIUM": "#FECB52"}\n    )\n    fig_risk.update_layout(\n        legend_title_text="Risk Level",\n        yaxis_title="Count"\n    )\n    st.plotly_chart(fig_risk, use_container_width=True)\n\nwith col3:\n    # Model validation metrics\n    total_actual = filtered_predictive["is_machine_failure"].sum()\n    true_pos = filtered_predictive["true_positive"].sum()\n    false_pos = filtered_predictive["false_positive"].sum()\n    false_neg = filtered_predictive["false_negative"].sum()\n    \n    precision = true_pos / (true_pos + false_pos) * 100 if (true_pos + false_pos) > 0 else 0\n    recall = true_pos / (true_pos + false_neg) * 100 if (true_pos + false_neg) > 0 else 0\n    f1 = 2 * (precision * recall) / (precision + recall) if (precision + recall) > 0 else 0\n    \n    fig_metrics = go.Figure()\n    \n    fig_metrics.add_trace(go.Indicator(\n        mode="gauge+number",\n        value=recall,\n        title={"text": "Model Recall (%)"},\n        gauge={\n            "axis": {"range": [0, 100]},\n            "bar": {"color": "#00CC96"},\n            "steps": [\n                {"range": [0, 50], "color": "#FFCCCB"},\n                {"range": [50, 75], "color": "#FFEFD5"},\n                {"range": [75, 100], "color": "#90EE90"},\n            ],\n            "threshold": {\n                "line": {"color": "red", "width": 4},\n                "thickness": 0.75,\n                "value": 50\n            }\n        }\n    ))\n    \n    fig_metrics.update_layout(\n        title="Predictive Model Performance",\n        height=300\n    )\n    st.plotly_chart(fig_metrics, use_container_width=True)\n    \n    # Show precision and F1 as text\n    st.markdown(f\"\"\"\n    **Model Metrics:**\n    - Precision: **{precision:.1f}%**\n    - Recall: **{recall:.1f}%**\n    - F1 Score: **{f1:.1f}%**\n    \"\"\")\n\n# =============================================================================\n# ROW 4: PERFORMANCE BY RISK LEVEL\n# =============================================================================\n\nst.markdown("---")\nst.subheader("📈 Performance Analysis by Risk Level")\n\ncol1, col2 = st.columns(2)\n\nwith col1:\n    # Failure rate by risk level\n    risk_failure = fct_performance.groupby("risk_level").agg({\n        "reading_count": "sum",\n        "failure_count": "sum"\n    }).reset_index()\n    risk_failure["failure_rate"] = risk_failure["failure_count"] / risk_failure["reading_count"] * 100\n    \n    # Order risk levels\n    risk_order = ["Minimal", "Low", "Medium", "High"]\n    risk_failure["risk_level"] = pd.Categorical(\n        risk_failure["risk_level"],\n        categories=risk_order,\n        ordered=True\n    )\n    risk_failure = risk_failure.sort_values("risk_level")\n    \n    fig_risk_failure = px.bar(\n        risk_failure,\n        x="risk_level",\n        y="failure_rate",\n        title="Failure Rate by Risk Level",\n        labels={\n            "risk_level": "Risk Level",\n            "failure_rate": "Failure Rate (%)"\n        },\n        color="failure_rate",\n        color_continuous_scale="Reds"\n    )\n    fig_risk_failure.update_layout(coloraxis_showscale=False)\n    st.plotly_chart(fig_risk_failure, use_container_width=True)\n\nwith col2:\n    # Average metrics by machine type\n    metrics_by_type = dim_machine[["machine_type_description", "avg_torque_nm", \n                                    "avg_rotational_speed_rpm", "avg_tool_wear_minutes"]].copy()\n    metrics_by_type = metrics_by_type.melt(\n        id_vars=["machine_type_description"],\n        var_name="Metric",\n        value_name="Value"\n    )\n    metrics_by_type["Metric"] = metrics_by_type["Metric"].replace({\n        "avg_torque_nm": "Avg Torque (Nm)",\n        "avg_rotational_speed_rpm": "Avg Speed (RPM/100)",\n        "avg_tool_wear_minutes": "Avg Tool Wear (min)"\n    })\n    # Scale RPM for visibility\n    metrics_by_type.loc[metrics_by_type["Metric"] == "Avg Speed (RPM/100)", "Value"] /= 100\n    \n    fig_metrics_type = px.bar(\n        metrics_by_type,\n        x="machine_type_description",\n        y="Value",\n        color="Metric",\n        title="Operating Metrics by Machine Type",\n        barmode="group",\n        labels={\n            "machine_type_description": "Machine Type",\n            "Value": "Value"\n        }\n    )\n    st.plotly_chart(fig_metrics_type, use_container_width=True)\n\n# =============================================================================\n# FOOTER\n# =============================================================================\n\nst.markdown("---")\nst.markdown(\"\"\"\n<div style='text-align: center; color: gray; padding: 20px;'>\n    <p>Built by <strong>Anton Timokhin</strong> | \n    <a href='https://github.com/antimoh/manufacturing-analytics-platform'>GitHub Repository</a> | \n    Data: UCI AI4I 2020 Predictive Maintenance Dataset</p>\n    <p>Technologies: Python • dbt • Snowflake • Streamlit • Plotly</p>\n</div>\n\"\"\", unsafe_allow_html=True)\n
+"""
+Manufacturing Analytics Dashboard
+==================================
+
+Interactive dashboard for predictive maintenance insights.
+Built with Streamlit, designed for portfolio demonstration.
+
+Author: Anton Timokhin
+Data Source: UCI AI4I 2020 Predictive Maintenance Dataset
+"""
+
+import streamlit as st
+import pandas as pd
+import plotly.express as px
+import plotly.graph_objects as go
+from pathlib import Path
+
+# =============================================================================
+# PAGE CONFIGURATION
+# =============================================================================
+
+st.set_page_config(
+    page_title="Manufacturing Analytics | Predictive Maintenance",
+    page_icon="🏭",
+    layout="wide",
+    initial_sidebar_state="expanded",
+)
+
+# =============================================================================
+# DATA LOADING
+# =============================================================================
+
+@st.cache_data
+def load_data():
+    """Load all mart tables from CSV files."""
+    data_dir = Path(__file__).parent / "data"
+    
+    data = {
+        "dim_machine_types": pd.read_csv(data_dir / "dim_machine_types.csv"),
+        "fct_failure_events": pd.read_csv(data_dir / "fct_failure_events.csv"),
+        "fct_failure_summary": pd.read_csv(data_dir / "fct_failure_summary.csv"),
+        "fct_machine_performance": pd.read_csv(data_dir / "fct_machine_performance.csv"),
+        "fct_predictive_indicators": pd.read_csv(data_dir / "fct_predictive_indicators.csv"),
+    }
+    
+    return data
+
+
+# Load data
+data = load_data()
+dim_machine = data["dim_machine_types"]
+fct_events = data["fct_failure_events"]
+fct_summary = data["fct_failure_summary"]
+fct_performance = data["fct_machine_performance"]
+fct_predictive = data["fct_predictive_indicators"]
+
+# =============================================================================
+# SIDEBAR
+# =============================================================================
+
+with st.sidebar:
+    st.image("https://img.icons8.com/fluency/96/factory.png", width=80)
+    st.title("Manufacturing Analytics")
+    st.markdown("---")
+    
+    # Machine type filter
+    machine_types = ["All"] + list(dim_machine["machine_type"].unique())
+    selected_machine = st.selectbox(
+        "🔧 Filter by Machine Type",
+        machine_types,
+        help="L=Low Quality, M=Medium Quality, H=High Quality"
+    )
+    
+    # Risk level filter
+    risk_levels = ["All"] + ["High", "Medium", "Low", "Minimal"]
+    selected_risk = st.selectbox(
+        "⚠️ Filter by Risk Level",
+        risk_levels
+    )
+    
+    st.markdown("---")
+    st.markdown("### About This Dashboard")
+    st.markdown("""
+    This dashboard analyzes machine sensor data 
+    to predict maintenance needs and prevent failures.
+    
+    **Data:** 10,000 machine operation records  
+    **Source:** UCI ML Repository  
+    **Built with:** Python, dbt, Snowflake, Streamlit
+    """)
+    
+    st.markdown("---")
+    st.markdown("[![GitHub](https://img.shields.io/badge/GitHub-Repo-blue?logo=github)](https://github.com/antimoh/manufacturing-analytics-platform)")
+
+# =============================================================================
+# FILTER DATA
+# =============================================================================
+
+# Apply filters to main dataset
+filtered_events = fct_events.copy()
+filtered_predictive = fct_predictive.copy()
+
+if selected_machine != "All":
+    filtered_events = filtered_events[filtered_events["machine_type"] == selected_machine]
+    filtered_predictive = filtered_predictive[filtered_predictive["machine_type"] == selected_machine]
+
+if selected_risk != "All":
+    filtered_events = filtered_events[filtered_events["risk_level"] == selected_risk]
+    filtered_predictive = filtered_predictive[filtered_predictive["risk_level"] == selected_risk]
+
+# =============================================================================
+# HEADER
+# =============================================================================
+
+st.title("🏭 Predictive Maintenance Dashboard")
+st.markdown("Real-time insights for manufacturing equipment health and failure prevention")
+
+# =============================================================================
+# KPI METRICS
+# =============================================================================
+
+st.markdown("---")
+
+col1, col2, col3, col4, col5 = st.columns(5)
+
+total_readings = len(filtered_events)
+total_failures = filtered_events["is_machine_failure"].sum()
+failure_rate = (total_failures / total_readings * 100) if total_readings > 0 else 0
+
+# Predictive metrics
+immediate_maintenance = len(filtered_predictive[filtered_predictive["maintenance_priority"] == "IMMEDIATE"])
+urgent_maintenance = len(filtered_predictive[filtered_predictive["maintenance_priority"] == "URGENT"])
+
+with col1:
+    st.metric(
+        label="Total Readings",
+        value=f"{total_readings:,}",
+        help="Number of machine sensor readings"
+    )
+
+with col2:
+    st.metric(
+        label="Total Failures",
+        value=f"{int(total_failures):,}",
+        delta=f"{failure_rate:.1f}% failure rate",
+        delta_color="inverse"
+    )
+
+with col3:
+    st.metric(
+        label="🚨 Immediate Action",
+        value=f"{immediate_maintenance:,}",
+        help="Machines requiring immediate maintenance"
+    )
+
+with col4:
+    st.metric(
+        label="⚡ Urgent Review",
+        value=f"{urgent_maintenance:,}",
+        help="Machines requiring urgent attention"
+    )
+
+with col5:
+    high_risk = len(filtered_events[filtered_events["risk_level"] == "High"])
+    st.metric(
+        label="⚠️ High Risk",
+        value=f"{high_risk:,}",
+        help="Readings classified as high risk"
+    )
+
+# =============================================================================
+# ROW 1: FAILURE ANALYSIS
+# =============================================================================
+
+st.markdown("---")
+st.subheader("📊 Failure Analysis")
+
+col1, col2 = st.columns(2)
+
+with col1:
+    # Failure rate by machine type
+    fig_failure_rate = px.bar(
+        dim_machine,
+        x="machine_type_description",
+        y="failure_rate_pct",
+        color="machine_type",
+        title="Failure Rate by Machine Type",
+        labels={
+            "machine_type_description": "Machine Type",
+            "failure_rate_pct": "Failure Rate (%)",
+            "machine_type": "Type"
+        },
+        color_discrete_map={"L": "#EF553B", "M": "#FECB52", "H": "#00CC96"}
+    )
+    fig_failure_rate.update_layout(showlegend=False)
+    st.plotly_chart(fig_failure_rate, use_container_width=True)
+
+with col2:
+    # Failure type distribution
+    failure_types = fct_summary.groupby("primary_failure_type")["event_count"].sum().reset_index()
+    failure_types = failure_types.sort_values("event_count", ascending=True)
+    
+    fig_failure_types = px.bar(
+        failure_types,
+        x="event_count",
+        y="primary_failure_type",
+        orientation="h",
+        title="Failure Type Distribution",
+        labels={
+            "event_count": "Number of Failures",
+            "primary_failure_type": "Failure Type"
+        },
+        color="event_count",
+        color_continuous_scale="Reds"
+    )
+    fig_failure_types.update_layout(showlegend=False, coloraxis_showscale=False)
+    st.plotly_chart(fig_failure_types, use_container_width=True)
+
+# =============================================================================
+# ROW 2: OPERATING CONDITIONS
+# =============================================================================
+
+st.markdown("---")
+st.subheader("🌡️ Operating Conditions Analysis")
+
+col1, col2 = st.columns(2)
+
+with col1:
+    # Temperature vs Power scatter
+    sample_data = filtered_events.sample(min(1000, len(filtered_events)), random_state=42)
+    
+    fig_scatter = px.scatter(
+        sample_data,
+        x="power_watts",
+        y="temperature_differential_k",
+        color="is_machine_failure",
+        title="Temperature Differential vs Power Output",
+        labels={
+            "power_watts": "Power (Watts)",
+            "temperature_differential_k": "Temp Differential (K)",
+            "is_machine_failure": "Failure"
+        },
+        color_discrete_map={0: "#636EFA", 1: "#EF553B"},
+        opacity=0.6
+    )
+    fig_scatter.update_layout(
+        legend_title_text="Machine Failure",
+        legend=dict(
+            itemsizing="constant",
+            title_font_size=12,
+        )
+    )
+    # Add reference lines for failure thresholds
+    fig_scatter.add_hline(y=8.6, line_dash="dash", line_color="red", 
+                          annotation_text="HDF Threshold (8.6K)")
+    fig_scatter.add_vline(x=3500, line_dash="dash", line_color="orange",
+                          annotation_text="Min Power")
+    fig_scatter.add_vline(x=9000, line_dash="dash", line_color="orange",
+                          annotation_text="Max Power")
+    st.plotly_chart(fig_scatter, use_container_width=True)
+
+with col2:
+    # Tool wear distribution by failure status
+    fig_wear = px.histogram(
+        filtered_events,
+        x="tool_wear_minutes",
+        color="is_machine_failure",
+        title="Tool Wear Distribution by Failure Status",
+        labels={
+            "tool_wear_minutes": "Tool Wear (minutes)",
+            "is_machine_failure": "Failure",
+            "count": "Count"
+        },
+        color_discrete_map={0: "#636EFA", 1: "#EF553B"},
+        barmode="overlay",
+        opacity=0.7
+    )
+    fig_wear.add_vline(x=200, line_dash="dash", line_color="red",
+                       annotation_text="TWF Zone Start")
+    fig_wear.update_layout(legend_title_text="Machine Failure")
+    st.plotly_chart(fig_wear, use_container_width=True)
+
+# =============================================================================
+# ROW 3: PREDICTIVE INDICATORS
+# =============================================================================
+
+st.markdown("---")
+st.subheader("🔮 Predictive Maintenance Indicators")
+
+col1, col2, col3 = st.columns(3)
+
+with col1:
+    # Maintenance priority distribution
+    priority_counts = filtered_predictive["maintenance_priority"].value_counts().reset_index()
+    priority_counts.columns = ["priority", "count"]
+    
+    # Define order
+    priority_order = ["IMMEDIATE", "URGENT", "SCHEDULED", "MONITOR", "NORMAL"]
+    priority_counts["priority"] = pd.Categorical(
+        priority_counts["priority"], 
+        categories=priority_order, 
+        ordered=True
+    )
+    priority_counts = priority_counts.sort_values("priority")
+    
+    fig_priority = px.pie(
+        priority_counts,
+        values="count",
+        names="priority",
+        title="Maintenance Priority Distribution",
+        color="priority",
+        color_discrete_map={
+            "IMMEDIATE": "#EF553B",
+            "URGENT": "#FFA15A",
+            "SCHEDULED": "#FECB52",
+            "MONITOR": "#00CC96",
+            "NORMAL": "#636EFA"
+        }
+    )
+    fig_priority.update_traces(textposition='inside', textinfo='percent+label')
+    st.plotly_chart(fig_priority, use_container_width=True)
+
+with col2:
+    # Risk indicator heatmap
+    risk_data = pd.DataFrame({
+        "Indicator": ["HDF Risk", "PWF Risk", "TWF Risk", "OSF Risk"],
+        "HIGH": [
+            len(filtered_predictive[filtered_predictive["hdf_risk_indicator"] == "HIGH"]),
+            len(filtered_predictive[filtered_predictive["pwf_risk_indicator"] == "HIGH"]),
+            len(filtered_predictive[filtered_predictive["twf_risk_indicator"].isin(["HIGH", "CRITICAL"])]),
+            len(filtered_predictive[filtered_predictive["osf_risk_indicator"].isin(["HIGH", "CRITICAL"])]),
+        ],
+        "MEDIUM": [
+            len(filtered_predictive[filtered_predictive["hdf_risk_indicator"] == "MEDIUM"]),
+            len(filtered_predictive[filtered_predictive["pwf_risk_indicator"] == "MEDIUM"]),
+            len(filtered_predictive[filtered_predictive["twf_risk_indicator"] == "MEDIUM"]),
+            len(filtered_predictive[filtered_predictive["osf_risk_indicator"] == "MEDIUM"]),
+        ],
+    })
+    
+    fig_risk = px.bar(
+        risk_data,
+        x="Indicator",
+        y=["HIGH", "MEDIUM"],
+        title="Risk Indicators Summary",
+        barmode="group",
+        color_discrete_map={"HIGH": "#EF553B", "MEDIUM": "#FECB52"}
+    )
+    fig_risk.update_layout(
+        legend_title_text="Risk Level",
+        yaxis_title="Count"
+    )
+    st.plotly_chart(fig_risk, use_container_width=True)
+
+with col3:
+    # Model validation metrics
+    total_actual = filtered_predictive["is_machine_failure"].sum()
+    true_pos = filtered_predictive["true_positive"].sum()
+    false_pos = filtered_predictive["false_positive"].sum()
+    false_neg = filtered_predictive["false_negative"].sum()
+    
+    precision = true_pos / (true_pos + false_pos) * 100 if (true_pos + false_pos) > 0 else 0
+    recall = true_pos / (true_pos + false_neg) * 100 if (true_pos + false_neg) > 0 else 0
+    f1 = 2 * (precision * recall) / (precision + recall) if (precision + recall) > 0 else 0
+    
+    fig_metrics = go.Figure()
+    
+    fig_metrics.add_trace(go.Indicator(
+        mode="gauge+number",
+        value=recall,
+        title={"text": "Model Recall (%)"},
+        gauge={
+            "axis": {"range": [0, 100]},
+            "bar": {"color": "#00CC96"},
+            "steps": [
+                {"range": [0, 50], "color": "#FFCCCB"},
+                {"range": [50, 75], "color": "#FFEFD5"},
+                {"range": [75, 100], "color": "#90EE90"},
+            ],
+            "threshold": {
+                "line": {"color": "red", "width": 4},
+                "thickness": 0.75,
+                "value": 50
+            }
+        }
+    ))
+    
+    fig_metrics.update_layout(
+        title="Predictive Model Performance",
+        height=300
+    )
+    st.plotly_chart(fig_metrics, use_container_width=True)
+    
+    # Show precision and F1 as text
+    st.markdown(f"""
+    **Model Metrics:**
+    - Precision: **{precision:.1f}%**
+    - Recall: **{recall:.1f}%**
+    - F1 Score: **{f1:.1f}%**
+    """)
+
+# =============================================================================
+# ROW 4: PERFORMANCE BY RISK LEVEL
+# =============================================================================
+
+st.markdown("---")
+st.subheader("📈 Performance Analysis by Risk Level")
+
+col1, col2 = st.columns(2)
+
+with col1:
+    # Failure rate by risk level
+    risk_failure = fct_performance.groupby("risk_level").agg({
+        "reading_count": "sum",
+        "failure_count": "sum"
+    }).reset_index()
+    risk_failure["failure_rate"] = risk_failure["failure_count"] / risk_failure["reading_count"] * 100
+    
+    # Order risk levels
+    risk_order = ["Minimal", "Low", "Medium", "High"]
+    risk_failure["risk_level"] = pd.Categorical(
+        risk_failure["risk_level"],
+        categories=risk_order,
+        ordered=True
+    )
+    risk_failure = risk_failure.sort_values("risk_level")
+    
+    fig_risk_failure = px.bar(
+        risk_failure,
+        x="risk_level",
+        y="failure_rate",
+        title="Failure Rate by Risk Level",
+        labels={
+            "risk_level": "Risk Level",
+            "failure_rate": "Failure Rate (%)"
+        },
+        color="failure_rate",
+        color_continuous_scale="Reds"
+    )
+    fig_risk_failure.update_layout(coloraxis_showscale=False)
+    st.plotly_chart(fig_risk_failure, use_container_width=True)
+
+with col2:
+    # Average metrics by machine type
+    metrics_by_type = dim_machine[["machine_type_description", "avg_torque_nm", 
+                                    "avg_rotational_speed_rpm", "avg_tool_wear_minutes"]].copy()
+    metrics_by_type = metrics_by_type.melt(
+        id_vars=["machine_type_description"],
+        var_name="Metric",
+        value_name="Value"
+    )
+    metrics_by_type["Metric"] = metrics_by_type["Metric"].replace({
+        "avg_torque_nm": "Avg Torque (Nm)",
+        "avg_rotational_speed_rpm": "Avg Speed (RPM/100)",
+        "avg_tool_wear_minutes": "Avg Tool Wear (min)"
+    })
+    # Scale RPM for visibility
+    metrics_by_type.loc[metrics_by_type["Metric"] == "Avg Speed (RPM/100)", "Value"] /= 100
+    
+    fig_metrics_type = px.bar(
+        metrics_by_type,
+        x="machine_type_description",
+        y="Value",
+        color="Metric",
+        title="Operating Metrics by Machine Type",
+        barmode="group",
+        labels={
+            "machine_type_description": "Machine Type",
+            "Value": "Value"
+        }
+    )
+    st.plotly_chart(fig_metrics_type, use_container_width=True)
+
+# =============================================================================
+# FOOTER
+# =============================================================================
+
+st.markdown("---")
+st.markdown("""
+<div style='text-align: center; color: gray; padding: 20px;'>
+    <p>Built by <strong>Anton Timokhin</strong> | 
+    <a href='https://github.com/antimoh/manufacturing-analytics-platform'>GitHub Repository</a> | 
+    Data: UCI AI4I 2020 Predictive Maintenance Dataset</p>
+    <p>Technologies: Python • dbt • Snowflake • Streamlit • Plotly</p>
+</div>
+""", unsafe_allow_html=True)
